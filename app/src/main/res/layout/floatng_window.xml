@@ -21,7 +21,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/ic_cancel"
-        android:layout_margin="5dp"
         android:contentDescription="@string/cancelbtn"
         app:layout_constraintTop_toTopOf="@id/youtubePlayerView"
         app:layout_constraintEnd_toEndOf="@id/youtubePlayerView"/>
