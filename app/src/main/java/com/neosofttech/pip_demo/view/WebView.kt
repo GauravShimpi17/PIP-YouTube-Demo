@@ -1,13 +1,13 @@
 package com.neosofttech.pip_demo.view
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
+import android.provider.Settings
+import android.view.*
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.neosofttech.pip_demo.databinding.ActivityWebViewBinding
 import com.neosofttech.pip_demo.databinding.FloatngWindowBinding
@@ -19,13 +19,12 @@ class WebView : AppCompatActivity() {
 
     private lateinit var binding: ActivityWebViewBinding
     private lateinit var pipButton: Button
+//    private lateinit var customStopButton: Button
 
     private var floatingPlayerView: View? = null
     private var floatingYouTubePlayer: YouTubePlayer? = null
 
-    private var lastX = 0
-    private var lastY = 0
-    private var isMoving = false
+    private val REQUEST_CODE = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +34,12 @@ class WebView : AppCompatActivity() {
         pipButton = binding.pipButton
 
         pipButton.setOnClickListener {
-            createFloatingPlayer()
+            if (!Settings.canDrawOverlays(this)) {
+                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                startActivityForResult(intent, REQUEST_CODE)
+            } else {
+                createFloatingPlayer()
+            }
         }
     }
 
@@ -46,16 +50,16 @@ class WebView : AppCompatActivity() {
             floatingPlayerView = floatingBinding.root
 
             val floatingYouTubePlayerView: YouTubePlayerView = floatingBinding.youtubePlayerView
+            val customStopButton: ImageView = floatingBinding.customStopButton
 
             lifecycle.addObserver(floatingYouTubePlayerView)
+
             floatingYouTubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
                 override fun onReady(youTubePlayer: YouTubePlayer) {
                     floatingYouTubePlayer = youTubePlayer
                     youTubePlayer.loadVideo("jxcnVDy3U3A", 0f)
                     youTubePlayer.play()
-
-                    // Attempt to hide the default UI controls if possible
-                    youTubePlayer.mute() // Mute the video by default
+//                    youTubePlayer.mute()
                 }
             })
 
@@ -71,33 +75,8 @@ class WebView : AppCompatActivity() {
             val rootLayout: FrameLayout = findViewById(android.R.id.content)
             rootLayout.addView(floatingPlayerView, params)
 
-            floatingPlayerView?.setOnTouchListener { v, event ->
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        lastX = event.rawX.toInt()
-                        lastY = event.rawY.toInt()
-                        isMoving = true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        if (isMoving) {
-                            val deltaX = event.rawX.toInt() - lastX
-                            val deltaY = event.rawY.toInt() - lastY
-
-                            val layoutParams = v.layoutParams as FrameLayout.LayoutParams
-                            layoutParams.leftMargin += deltaX
-                            layoutParams.topMargin += deltaY
-                            v.layoutParams = layoutParams
-
-                            lastX = event.rawX.toInt()
-                            lastY = event.rawY.toInt()
-                        }
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        isMoving = false
-                        v.performClick()
-                    }
-                }
-                true
+            customStopButton.setOnClickListener {
+                stopVideo()
             }
 
             floatingPlayerView?.visibility = View.VISIBLE
@@ -106,17 +85,38 @@ class WebView : AppCompatActivity() {
         }
     }
 
-    override fun onStop() {
-        super.onStop()
+    private fun stopVideo() {
         floatingYouTubePlayer?.pause()
-    }
+//        floatingYouTubePlayer?.seekTo(0f)
+        floatingYouTubePlayer = null
 
-    override fun onDestroy() {
-        super.onDestroy()
+        // Remove floating window
         floatingPlayerView?.let {
             val rootLayout: FrameLayout = findViewById(android.R.id.content)
             rootLayout.removeView(it)
             floatingPlayerView = null
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        stopVideo()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopVideo()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_CODE) {
+            if (Settings.canDrawOverlays(this)) {
+                createFloatingPlayer()
+            } else {
+                // Optionally show a message or inform the user that permission is required
+            }
         }
     }
 }

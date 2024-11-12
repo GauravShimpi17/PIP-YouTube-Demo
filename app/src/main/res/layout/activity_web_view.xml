@@ -20,6 +20,6 @@
         android:layout_height="wrap_content"
         android:text="Enter Floating Window"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/youtubePlayerView" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
