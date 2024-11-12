@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onReady(youTubePlayer: YouTubePlayer) {
                     this@MainActivity.youTubePlayer = youTubePlayer
                     youTubePlayer.loadVideo(viewModel.videoId, 0f)
+                    youTubePlayer.pause()
                 }
             })
         }
