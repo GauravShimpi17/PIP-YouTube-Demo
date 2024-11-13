@@ -7,29 +7,30 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Rational
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
-import android.widget.ImageView
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Observer
 import com.neosofttech.pip_demo.databinding.ActivityWebViewBinding
 import com.neosofttech.pip_demo.databinding.FloatngWindowBinding
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.neosofttech.pip_demo.viewmodel.WebViewModel
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
 class WebView : AppCompatActivity() {
 
     private lateinit var binding: ActivityWebViewBinding
+    private lateinit var floatingBinding: FloatngWindowBinding
     private lateinit var pipButton: Button
-    private lateinit var customStopButton: Button
+    private val viewModel: WebViewModel by viewModels()
 
     private var floatingPlayerView: View? = null
-    private var floatingYouTubePlayer: YouTubePlayer? = null
+    private var floatingYouTubePlayerView: YouTubePlayerView? = null
 
     private val REQUEST_CODE = 1001
-    private var isPiPModeRequested = false // Track whether PiP was requested
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,78 +40,63 @@ class WebView : AppCompatActivity() {
         pipButton = binding.pipButton
 
         pipButton.setOnClickListener {
-            // Check for overlay permission
-            if (!Settings.canDrawOverlays(this)) {
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-                startActivityForResult(intent, REQUEST_CODE)
-            } else {
-                createFloatingPlayer() // Permission granted, create the floating player
-            }
+            viewModel.checkOverlayPermission(this)
         }
+
+        viewModel.hasOverlayPermission.observe(this, Observer { hasPermission ->
+            if (hasPermission) {
+                createFloatingPlayer()
+            } else {
+                // Show a message requesting overlay permission
+            }
+        })
+
+        viewModel.isPiPModeRequested.observe(this, Observer { isPiPModeRequested ->
+            if (isPiPModeRequested) {
+                enterPiPModeIfNeeded()
+            }
+        })
     }
 
     private fun createFloatingPlayer() {
-        if (floatingPlayerView == null) {
-            val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            val floatingBinding = FloatngWindowBinding.inflate(inflater)
-            floatingPlayerView = floatingBinding.root
+        val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        floatingBinding = FloatngWindowBinding.inflate(inflater)
 
-            val floatingYouTubePlayerView: YouTubePlayerView = floatingBinding.youtubePlayerView
-            val customStopButton: ImageView = floatingBinding.customStopButton
+        floatingPlayerView = floatingBinding.root
+        floatingYouTubePlayerView = floatingBinding.youtubePlayerView
 
-            // Add lifecycle observer for the floating YouTube player
-            lifecycle.addObserver(floatingYouTubePlayerView)
+        val rootLayout: FrameLayout = findViewById(android.R.id.content)
 
-            // Set up YouTube player listener
-            floatingYouTubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-                override fun onReady(youTubePlayer: YouTubePlayer) {
-                    floatingYouTubePlayer = youTubePlayer
-                    youTubePlayer.loadVideo("jxcnVDy3U3A", 0f) // Set video ID and start from 0
-                    youTubePlayer.play() // Play the video automatically
-                    //youTubePlayer.mute() // Mute the video by default (optional)
-                }
-            })
+        // Add the floating player view to the layout
+        rootLayout.addView(floatingPlayerView)
 
-            // Define the layout parameters for the floating player
-            val params = if (isPiPModeRequested){
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT, // Match parent for full screen width
-                    FrameLayout.LayoutParams.WRAP_CONTENT // Wrap content for height
-                )
-            }else{
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT, // Match parent for full screen width
-                    FrameLayout.LayoutParams.WRAP_CONTENT // Wrap content for height
-                ).apply {
-                    gravity = Gravity.TOP or Gravity.START
-                    leftMargin = 100 // Start from the left edge
-                    topMargin = 100 // Start from the top edge
-                }
-            }
+        // Initialize the YouTube player
+        viewModel.createFloatingPlayer(floatingYouTubePlayerView!!)
 
-
-            // Add the floating player view to the root layout
-            val rootLayout: FrameLayout = findViewById(android.R.id.content)
-            rootLayout.addView(floatingPlayerView, params)
-
-            // Set up Stop button click listener
-            customStopButton.setOnClickListener {
-                stopVideo() // Stop and remove the floating player
-            }
-
-            floatingPlayerView?.visibility = View.VISIBLE
-        } else {
-            floatingPlayerView?.visibility = View.VISIBLE
+        // Set stop button behavior
+        floatingBinding.customStopButton.setOnClickListener {
+            viewModel.stopVideo()
+            removeFloatingPlayer()
         }
+
+        // Set initial parameters for the floating window
+        setFloatingWindowLayoutParams()
     }
 
-    // Function to stop (pause and cancel) the video and remove the floating window
-    private fun stopVideo() {
-        floatingYouTubePlayer?.pause() // Pause the video
-        floatingYouTubePlayer?.seekTo(0f) // Seek to the beginning of the video (optional)
-        floatingYouTubePlayer = null // Release the reference to the player
+    private fun setFloatingWindowLayoutParams() {
+        val params = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            leftMargin = 50
+            topMargin = 50
+            rightMargin = 50
+        }
+        floatingPlayerView?.layoutParams = params
+    }
 
-        // Remove floating window
+    private fun removeFloatingPlayer() {
         floatingPlayerView?.let {
             val rootLayout: FrameLayout = findViewById(android.R.id.content)
             rootLayout.removeView(it)
@@ -118,63 +104,66 @@ class WebView : AppCompatActivity() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
+    private fun enterPiPModeIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && floatingPlayerView != null) {
+            val aspectRatio = Rational(floatingPlayerView!!.width, floatingPlayerView!!.height)
+            val pipParams = PictureInPictureParams.Builder()
+                .setAspectRatio(aspectRatio)
+                .setActions(emptyList())
+                .build()
 
-        if (!isPiPModeRequested) {
-            // When the app is paused, check if it should enter PiP mode
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val width = resources.displayMetrics.widthPixels // Match parent width
-                val height = (width * 9) / 16 // Maintain a 16:9 aspect ratio
-
-                val aspectRatio = Rational(width, height) // Aspect ratio for PiP window
-                val pipParams = PictureInPictureParams.Builder()
-                    .setAspectRatio(aspectRatio)
-                    .build()
-
-                // Enter PiP mode only if another activity is on top or home is pressed
-                enterPictureInPictureMode(pipParams)
-                isPiPModeRequested = true
-
-                // Hide other views in the activity when PiP mode starts
-                binding.root.visibility = View.GONE
-            }
+            enterPictureInPictureMode(pipParams)
+            binding.root.visibility = View.GONE
         }
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        viewModel.onUserLeaveHint()
+    }
 
-        // When the activity is resumed, we check if PiP mode was requested
-        if (isPiPModeRequested) {
-            isPiPModeRequested = false // Reset PiP request flag
-            // Re-enable the activity views if PiP mode was not triggered
-            binding.root.visibility = View.VISIBLE
-        }
+    override fun onPause() {
+        super.onPause()
+        viewModel.onPause()
     }
 
     override fun onStop() {
         super.onStop()
-
-        // If the app is backgrounded, remove the floating window or stop PiP mode
-        stopVideo() // Remove floating window or stop video when the app is stopped
+        viewModel.stopVideo()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopVideo() // Ensure the video is stopped when the activity is destroyed
+        viewModel.stopVideo()
     }
 
-    // Handle the permission request result (if user grants overlay permission)
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        if (isInPictureInPictureMode) {
+            viewModel.onPictureInPictureModeChanged(true)
+            floatingBinding.customStopButton.visibility = View.GONE
+            setPiPWindowParams()
+        } else {
+            viewModel.onPictureInPictureModeChanged(false)
+            binding.root.visibility = View.VISIBLE
+            resetWindowParams()
+        }
+    }
+
+    private fun setPiPWindowParams() {
+        val params = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        floatingPlayerView?.layoutParams = params
+    }
+
+    private fun resetWindowParams() {
+        setFloatingWindowLayoutParams()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQUEST_CODE) {
-            if (Settings.canDrawOverlays(this)) {
-                createFloatingPlayer() // Permission granted, create the floating player
-            } else {
-                // Optionally show a message or inform the user that permission is required
-            }
-        }
+        viewModel.onActivityResult(requestCode, resultCode, data)
     }
 }

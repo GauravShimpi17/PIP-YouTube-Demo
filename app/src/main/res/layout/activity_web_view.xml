@@ -34,7 +34,7 @@
         android:id="@+id/pipButton3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter Floating Window 2"
+        android:text="Enter Floating Window 3"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/pipButton2" />
 
@@ -42,7 +42,7 @@
         android:id="@+id/pipButton4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter Floating Window 2"
+        android:text="Enter Floating Window 4"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/pipButton3" />
 
