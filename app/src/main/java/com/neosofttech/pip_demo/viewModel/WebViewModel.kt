@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import android.util.Rational
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -56,10 +55,6 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
-        if (isInPictureInPictureMode) {
-            _isPiPModeRequested.value = true
-        } else {
-            _isPiPModeRequested.value = false
-        }
+        _isPiPModeRequested.value = isInPictureInPictureMode
     }
 }

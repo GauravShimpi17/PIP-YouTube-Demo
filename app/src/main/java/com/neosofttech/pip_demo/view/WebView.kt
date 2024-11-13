@@ -1,20 +1,23 @@
 package com.neosofttech.pip_demo.view
 
 import android.app.PictureInPictureParams
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Rational
+import android.view.DragEvent
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.DragShadowBuilder
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import com.neosofttech.pip_demo.databinding.ActivityWebViewBinding
 import com.neosofttech.pip_demo.databinding.FloatngWindowBinding
 import com.neosofttech.pip_demo.viewmodel.WebViewModel
@@ -30,8 +33,6 @@ class WebView : AppCompatActivity() {
     private var floatingPlayerView: View? = null
     private var floatingYouTubePlayerView: YouTubePlayerView? = null
 
-    private val REQUEST_CODE = 1001
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityWebViewBinding.inflate(layoutInflater)
@@ -43,19 +44,19 @@ class WebView : AppCompatActivity() {
             viewModel.checkOverlayPermission(this)
         }
 
-        viewModel.hasOverlayPermission.observe(this, Observer { hasPermission ->
+        viewModel.hasOverlayPermission.observe(this) { hasPermission ->
             if (hasPermission) {
                 createFloatingPlayer()
             } else {
-                // Show a message requesting overlay permission
+                Toast.makeText(this, "Permit Overlay", Toast.LENGTH_SHORT).show()
             }
-        })
+        }
 
-        viewModel.isPiPModeRequested.observe(this, Observer { isPiPModeRequested ->
+        viewModel.isPiPModeRequested.observe(this) { isPiPModeRequested ->
             if (isPiPModeRequested) {
                 enterPiPModeIfNeeded()
             }
-        })
+        }
     }
 
     private fun createFloatingPlayer() {
@@ -66,14 +67,10 @@ class WebView : AppCompatActivity() {
         floatingYouTubePlayerView = floatingBinding.youtubePlayerView
 
         val rootLayout: FrameLayout = findViewById(android.R.id.content)
-
-        // Add the floating player view to the layout
         rootLayout.addView(floatingPlayerView)
 
-        // Initialize the YouTube player
         viewModel.createFloatingPlayer(floatingYouTubePlayerView!!)
 
-        // Set stop button behavior
         floatingBinding.customStopButton.setOnClickListener {
             viewModel.stopVideo()
             removeFloatingPlayer()
