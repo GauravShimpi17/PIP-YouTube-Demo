@@ -1,56 +1,48 @@
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/frame"
     android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:clickable="true"
-    android:focusable="true"
-    android:layout_height="wrap_content">
+    android:focusable="true">
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/pipCard"
-        android:focusable="true"
-        android:clickable="true"
+    <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+        android:id="@+id/youtubePlayerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="25dp"
+        android:layout_marginVertical="25dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+    <ImageView
+        android:id="@+id/customStopButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_cancel"
+        android:contentDescription="@string/cancelbtn"
+        app:layout_constraintEnd_toEndOf="@id/youtubePlayerView"
+        app:layout_constraintTop_toTopOf="@id/youtubePlayerView" />
 
+    <ImageButton
+        android:id="@+id/move"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="5dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_move"
+        app:layout_constraintEnd_toStartOf="@id/fullscreen"
+        app:layout_constraintTop_toBottomOf="@id/youtubePlayerView" />
 
-            <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-                android:id="@+id/youtubePlayerView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+    <ImageButton
+        android:id="@+id/fullscreen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_fullscreen"
+        app:layout_constraintEnd_toEndOf="@id/youtubePlayerView"
+        app:layout_constraintTop_toBottomOf="@id/youtubePlayerView" />
 
-            <ImageView
-                android:id="@+id/customStopButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/ic_cancel"
-                android:contentDescription="@string/cancelbtn"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-            <!--<ImageButton
-                android:id="@+id/move"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_move"
-                android:background="@android:color/transparent"
-                android:layout_marginEnd="5dp"
-                app:layout_constraintTop_toBottomOf="@id/youtubePlayerView"
-                app:layout_constraintEnd_toStartOf="@id/fullscreen"/>
-            <ImageButton
-                android:id="@+id/fullscreen"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_fullscreen"
-                android:background="@android:color/transparent"
-                app:layout_constraintTop_toBottomOf="@id/youtubePlayerView"
-                app:layout_constraintEnd_toEndOf="parent"/>-->
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

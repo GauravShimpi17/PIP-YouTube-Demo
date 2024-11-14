@@ -1,4 +1,4 @@
-package com.neosofttech.pip_demo.viewmodel
+package com.neosofttech.pip_demo.viewModel
 
 import android.app.Application
 import android.content.Context
@@ -18,6 +18,9 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _hasOverlayPermission = MutableLiveData(false)
     val hasOverlayPermission: LiveData<Boolean> get() = _hasOverlayPermission
+
+    private val _isFloatingWindowVisible = MutableLiveData(false)
+    val isFloatingWindowVisible: LiveData<Boolean> get() = _isFloatingWindowVisible
 
     private var floatingYouTubePlayer: YouTubePlayer? = null
 
@@ -39,11 +42,15 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
                 youTubePlayer.play()
             }
         })
+        // Mark the floating window as visible
+        _isFloatingWindowVisible.value = true
     }
 
     fun stopVideo() {
         floatingYouTubePlayer?.pause()
         floatingYouTubePlayer = null
+        // Mark the floating window as not visible
+        _isFloatingWindowVisible.value = false
     }
 
     fun onUserLeaveHint() {
@@ -56,5 +63,9 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
         _isPiPModeRequested.value = isInPictureInPictureMode
+    }
+
+    fun setPiPButtonState() {
+        _hasOverlayPermission.value = Settings.canDrawOverlays(getApplication())
     }
 }
